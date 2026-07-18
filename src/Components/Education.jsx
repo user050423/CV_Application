@@ -1,79 +1,60 @@
 import { useState } from 'react';
+import SchoolEntry from './SchoolEntry.jsx';
 
 export default function Education(){
 
-    let data = {
-        schoolName: '',
-        degree: '',
-        startDate: '',
-        endDate: ''
+    const [ addButtonClicked, setAddButtonClicked ] = useState(false);
+    const [ schoolEntries, setSchoolEntries ] = useState([]);
+    const [ editingId, setEditingId ] = useState(null);
+    
+
+    function saveSchoolToEntries(school){
+        if (editingId){
+            setSchoolEntries((prevData) => 
+                prevData.map((entry) => 
+                    entry.id === editingId ? {...entry, ...school } : entry
+                )
+            )
+            setEditingId(null);
+        } else {
+            const newEntry = {...school, id: crypto.randomUUID()};
+            setSchoolEntries((prevData) => [...prevData, newEntry]);
+        }
     }
 
-    const [ formData, setFormData ] = useState(data);
-    const [ isEditing, setIsEditing ] = useState(true);
-
-    function handleChange(e){
-        const { name, value } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name] : value 
-        }))
+    function removeEntry(id){
+        setSchoolEntries(schoolEntries.filter(school => school.id !== id))
     }
 
-     function handleSubmitForm(e){
-        e.preventDefault();
-        setIsEditing(false);
-    }
 
+
+    const currentEditingSchool = schoolEntries.find(school => school.id === editingId) 
 
     return(
         <>
-            {isEditing ? (
-            <form onSubmit={handleSubmitForm}> 
-                <label>School/University</label>
-                <input 
-                    type="text"
-                    name='schoolName'
-                    onChange={handleChange}
-                    value={formData.schoolName}
-                    required
+            { !addButtonClicked && !editingId &&
+            <button onClick={() => setAddButtonClicked(true)}>+ Add School</button> }
+            {(addButtonClicked || editingId) && (
+                <SchoolEntry 
+                    addSchoolEntry={saveSchoolToEntries} 
+                    cancelButton={()=> {!editingId ? setAddButtonClicked(false) : setEditingId(null)}}
+                    selectedSchool={currentEditingSchool}
                 />
-                <label>Degree</label>
-                <input 
-                    type="text"
-                    name='degree'
-                    onChange={handleChange}
-                    value={formData.degree}
-                    required
-                />
-                <label>Start Date</label>
-                <input 
-                    type="number"
-                    name='startDate'
-                    onChange={handleChange}
-                    value={formData.startDate}
-                    required
-                />
-                <label>End Date</label>
-                <input 
-                    type="number"
-                    name='endDate'
-                    onChange={handleChange}
-                    value={formData.endDate}
-                    required
-                />
-                <button type='submit'>Submit</button>
-            </form>
-             ) : (
-                <div>
-                    <h1>{formData.schoolName}</h1>
-                    <p>{formData.degree}</p>
-                    <p>{formData.startDate}</p>
-                    <p>{formData.endDate}</p>
-                    <button onClick={() => setIsEditing(true)}>Edit</button>
-                </div>
-            )}    
+            )}
+
+            {schoolEntries.length > 0 && 
+            schoolEntries.map((school, index) => {
+                return (
+                    <div key={school.id}>
+                        <p>{school.schoolName}</p>
+                        <p>{school.degree}</p>
+                        <p>{school.startDate} - {school.endDate}</p>
+                        <button onClick={() => removeEntry(school.id)}>Remove</button> 
+                        <button onClick={() => setEditingId(school.id)}>Edit</button>
+                    </div>
+                )
+            })
+            }
         </>
     )
 }
-
