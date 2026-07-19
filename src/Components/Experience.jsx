@@ -1,88 +1,61 @@
 import { useState } from 'react';
+import JobEntry from './JobEntry.jsx';
 
 export default function Experience(){
 
-    let data = {
-        companyName: '',
-        position: '',
-        startDate: '',
-        endDate: '',
-        description: '',
+    const [ addButtonClicked, setAddButtonClicked ] = useState(false);
+    const [ jobEntries, setJobEntries ] = useState([]);
+    const [ editingId, setEditingId ] = useState(null);
+    
+
+    function saveJobToEntries(job){
+        if (editingId){
+            setJobEntries((prevData) => 
+                prevData.map((entry) => 
+                    entry.id === editingId ? {...entry, ...job } : entry
+                )
+            )
+            setEditingId(null);
+        } else {
+            const newEntry = {...job, id: crypto.randomUUID()};
+            setJobEntries((prevData) => [...prevData, newEntry]);
+        }
     }
 
-    const [ formData, setFormData ] = useState(data);
-    const [ isEditing, setIsEditing ] = useState(true);
-
-    function handleChange(e){
-        const { name, value } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name] : value 
-        }))
+    function removeEntry(id){
+        setJobEntries(jobEntries.filter(job => job.id !== id))
     }
 
-     function handleSubmitForm(e){
-        e.preventDefault();
-        setIsEditing(false);
-    }
 
+
+    const currentEditingJob = jobEntries.find(job => job.id === editingId) 
 
     return(
         <>
-            {isEditing ? (
-            <form onSubmit={handleSubmitForm}> 
-                <label>Company</label>
-                <input 
-                    type="text"
-                    name='companyName'
-                    onChange={handleChange}
-                    value={formData.companyName}
-                    required
+            { !addButtonClicked && !editingId &&
+            <button onClick={() => setAddButtonClicked(true)}>+ Add Job Experience</button> }
+            {(addButtonClicked || editingId) && (
+                <JobEntry 
+                    addJobEntry={saveJobToEntries} 
+                    cancelButton={()=> {!editingId ? setAddButtonClicked(false) : setEditingId(null)}}
+                    selectedJob={currentEditingJob}
                 />
-                <label>Position</label>
-                <input 
-                    type="text"
-                    name='position'
-                    onChange={handleChange}
-                    value={formData.position}
-                    required
-                />
-                <label>Start Date</label>
-                <input 
-                    type="number"
-                    name='startDate'
-                    onChange={handleChange}
-                    value={formData.startDate}
-                    required
-                />
-                <label>End Date</label>
-                <input 
-                    type="number"
-                    name='endDate'
-                    onChange={handleChange}
-                    value={formData.endDate}
-                    required
-                />
-                <label>Description</label>
-                <textarea 
-                    name="description"
-                    onChange={handleChange}
-                    value={formData.description}
-                    required
-                ></textarea>
-                <button type='submit'>Submit</button>
-            </form>
-             ) : (
-                <div>
-                    <h1>{formData.companyName}</h1>
-                    <p>{formData.position}</p>
-                    <p>{formData.startDate}</p>
-                    <p>{formData.endDate}</p>
-                    <p>{formData.description}</p>
-                    <button onClick={() => setIsEditing(true)}>Edit</button>
-                </div>
-            )}    
+            )}
+
+            {jobEntries.length > 0 && 
+            jobEntries.map((job, index) => {
+                return (
+                    <div key={job.id}>
+                        <p>{job.jobName}</p>
+                        <p>{job.position}</p>
+                        <p>{job.startDate} - {job.endDate}</p>
+                        <p>{job.description}</p>
+                        <button onClick={() => removeEntry(job.id)}>Remove</button> 
+                        <button onClick={() => setEditingId(job.id)}>Edit</button>
+                    </div>
+                )
+            })
+            }
         </>
     )
 }
-
